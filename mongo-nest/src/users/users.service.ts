@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Users, UsersDocument } from './schema/users.schema';
 import { Model } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -10,20 +11,47 @@ export class UsersService {
     constructor(@InjectModel(Users.name) private usersModule:Model<UsersDocument>,
     ){}
 
-    createUser(createUserDto: CreateUserDto) {
-        return 'This action create a new user';
+    async createUser(createUserDto: CreateUserDto) {
+
+        const userCreated = this.usersModule.create(createUserDto)
+        return userCreated;
     }
 
     findAllUsers() {
-        return 'This action return all users';
+        const listUsers = this.usersModule.find();
+        return listUsers;
     }
 
-    findOneUser(id: number) {
-        return 'This action find one user by ID';
+    async findOneUser(userId: string) {
+        const existsUser = await this.usersModule.findById(userId).exec();
+
+        if (!existsUser) {
+            return new HttpException(`User: ${userId} not found!`, HttpStatus.NOT_FOUND);
+        }
+        return existsUser;
+
     }
 
-    deleteUser(id: number) {
-        return 'This action delete an user by ID';
+    async deleteUser(userId: string) {
+
+        const existsUser = await this.usersModule.findByIdAndDelete(userId);
+
+        if(!existsUser) {
+            throw new HttpException(`The user you want to delete not Found!`, HttpStatus.NOT_FOUND);
+        }
+        return existsUser;   
+    }
+
+    async updateUser(userId: string, user: UpdateUserDto) {
+        const existsUser  = await this.usersModule.findByIdAndUpdate(userId, user,{new:true} );
+
+        if (!existsUser) {
+            throw new HttpException(`User: ${userId} not found!`, HttpStatus.NOT_FOUND);
+        }
+
+        return existsUser;
+        
+        
     }
 
     
